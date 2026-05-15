@@ -15,7 +15,7 @@ echo "==> [1/5] Enabling SPIFFE auth with Authorization header passthrough..."
 # header by default before it reaches the SPIFFE plugin. Without this flag,
 # every login returns 403 permission denied with no diagnostic information.
 vault auth enable -passthrough-request-headers="Authorization" spiffe 2>/dev/null \
-  || vault auth tune -passthrough-request-headers="Authorization" auth/spiffe/ \
+  || vault auth tune -passthrough-request-headers="Authorization" spiffe/ \
   && echo "  auth/spiffe/ ready — passthrough header confirmed"
 
 echo "==> [2/5] Writing Vault policy..."

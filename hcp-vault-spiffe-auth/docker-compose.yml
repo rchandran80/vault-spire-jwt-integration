@@ -35,7 +35,7 @@ services:
     container_name: hcp-workload-app
     depends_on:
       - spire-agent
-    pid: "service:hcp-spire-agent"
+    pid: "service:spire-agent"
     volumes:
       - ./data/sockets:/opt/spire/sockets
     environment:

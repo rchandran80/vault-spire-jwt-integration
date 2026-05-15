@@ -54,7 +54,7 @@ services:
     depends_on:
       - spire-agent
       - vault-ent
-    pid: "service:local-spire-agent"
+    pid: "service:spire-agent"
     volumes:
       - ./data/sockets:/opt/spire/sockets
     environment:
