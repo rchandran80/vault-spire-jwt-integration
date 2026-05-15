@@ -19,3 +19,7 @@ venv/
 .idea/
 .vscode/
 *.swp
+
+# Internal investigation notes
+implementation-notes.md
+federation-endpoint-findings.md
