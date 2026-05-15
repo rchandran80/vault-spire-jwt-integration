@@ -105,6 +105,13 @@ SPIRE Agent ──── Unix socket ────► Workload App
 
 ### Step 0 — Clone and configure
 
+> ⚠️ **Fill in `.env` before running any command.** Running with the
+> placeholder values (`<your-cluster>`, `<your-root-or-admin-token>`)
+> produces a confusing DNS error deep in the Python stack trace —
+> `Failed to resolve '%3cuour-cluster%3e.vault.hashicorp.cloud'` — where
+> the angle brackets are URL-encoded and the real cause (unfilled `.env`)
+> is not obvious.
+
 ```bash
 git clone https://github.com/rchandran80/vault-spire-jwt-integration.git
 cd vault-spire-jwt-integration
@@ -263,6 +270,14 @@ docker run --rm --user 0 -v "$(pwd)/data/server:/data" alpine sh -c "rm -rf /dat
 docker run --rm --user 0 -v "$(pwd)/data/agent:/data" alpine sh -c "rm -rf /data/*"
 docker run --rm --user 0 -v "$(pwd)/data/sockets:/data" alpine sh -c "rm -rf /data/*"
 ```
+
+> ⚠️ **Do not use `rm -rf data/` from the macOS terminal.** Docker
+> Desktop uses VirtioFS for bind mounts — files written by container-root
+> processes are cached in a separate layer and remain visible inside
+> containers even after a host-side deletion. The symptom of a
+> host-side delete is `x509: certificate signed by unknown authority`
+> on the next agent startup. Always use the `docker run --user 0 ... alpine`
+> cleanup commands shown above.
 
 ### Key rotation (profile=static)
 
@@ -525,6 +540,14 @@ docker run --rm --user 0 -v "$(pwd)/data/agent:/data" alpine sh -c "rm -rf /data
 docker run --rm --user 0 -v "$(pwd)/data/sockets:/data" alpine sh -c "rm -rf /data/*"
 ```
 
+> ⚠️ **Do not use `rm -rf data/` from the macOS terminal.** Docker
+> Desktop uses VirtioFS for bind mounts — files written by container-root
+> processes are cached in a separate layer and remain visible inside
+> containers even after a host-side deletion. The symptom of a
+> host-side delete is `x509: certificate signed by unknown authority`
+> on the next agent startup. Always use the `docker run --user 0 ... alpine`
+> cleanup commands shown above.
+
 > After teardown, the TLS cert is deleted along with `data/server/`. Re-run Step 2
 > before starting again.
 
@@ -582,6 +605,27 @@ exactly as shown using `docker run --user 0`.
 
 Tokens are single-use — even a failed attestation attempt consumes the token.
 Generate a new token (Step 3 or Step 4) and update `agent.conf`.
+
+### `rpc error: Token has already been used`
+
+The join token in `agent.conf` was consumed by a prior attestation attempt —
+including failed ones. Tokens are single-use regardless of whether attestation
+succeeded. Generate a new token and update `agent.conf`:
+
+```bash
+# HCP approach:
+JOIN_TOKEN=$(docker exec hcp-spire-server \
+  /opt/spire/bin/spire-server token generate \
+  -spiffeID spiffe://demo.realpage.local/agent/local | awk '{print $NF}')
+
+# Local approach:
+JOIN_TOKEN=$(docker exec local-spire-server \
+  /opt/spire/bin/spire-server token generate \
+  -spiffeID spiffe://demo.realpage.local/agent/local | awk '{print $NF}')
+
+echo "New token: $JOIN_TOKEN"
+# Update join_token = "..." in spire/agent/agent.conf
+```
 
 ---
 
