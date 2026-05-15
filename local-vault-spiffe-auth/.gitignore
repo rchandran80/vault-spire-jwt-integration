@@ -1,0 +1,28 @@
+# Runtime data (generated at startup — do not commit)
+data/
+
+# Environment file contains real credentials
+.env
+
+# Internal implementation and investigation notes (not for public repo)
+implementation-notes.md
+federation-endpoint-findings.md
+
+# Superseded by execute-instructions.md
+execute-instructions.txt
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.venv/
+venv/
+
+# Editor
+.idea/
+.vscode/
+*.swp

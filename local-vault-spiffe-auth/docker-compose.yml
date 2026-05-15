@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  spire-server:
+    image: ghcr.io/spiffe/spire-server:1.14.1
+    container_name: local-spire-server
+    hostname: spire-server
+    user: "0"
+    volumes:
+      - ./spire/server:/opt/spire/conf/server
+      - ./data/server:/opt/spire/data/server
+    command: ["-config", "/opt/spire/conf/server/server.conf"]
+    ports:
+      - "8081:8081"
+      - "8444:8443"
+    networks:
+      - spire-net
+
+  spire-agent:
+    image: ghcr.io/spiffe/spire-agent:1.14.1
+    container_name: local-spire-agent
+    hostname: spire-agent
+    user: "0"
+    depends_on:
+      - spire-server
+    volumes:
+      - ./spire/agent:/opt/spire/conf/agent
+      - ./data/agent:/opt/spire/data/agent
+      - ./data/sockets:/opt/spire/sockets
+    command: ["-config", "/opt/spire/conf/agent/agent.conf"]
+    networks:
+      - spire-net
+
+  vault-ent:
+    image: hashicorp/vault-enterprise:2.0.0-ent
+    container_name: local-vault-ent
+    user: "0"
+    cap_add:
+      - IPC_LOCK
+    environment:
+      - VAULT_LICENSE=${VAULT_LICENSE}
+      - VAULT_DEV_ROOT_TOKEN_ID=root
+      - VAULT_DEV_LISTEN_ADDRESS=0.0.0.0:8200
+    command: ["vault", "server", "-dev", "-dev-root-token-id=root",
+              "-dev-listen-address=0.0.0.0:8200"]
+    ports:
+      - "8200:8200"
+    networks:
+      - spire-net
+
+  workload:
+    build: ./workload
+    container_name: local-workload-app
+    depends_on:
+      - spire-agent
+      - vault-ent
+    pid: "service:local-spire-agent"
+    volumes:
+      - ./data/sockets:/opt/spire/sockets
+    environment:
+      - VAULT_ADDR=http://vault-ent:8200
+      - VAULT_NAMESPACE=
+      - SPIFFE_ENDPOINT_SOCKET=unix:///opt/spire/sockets/agent.sock
+    networks:
+      - spire-net
+
+networks:
+  spire-net:
+    driver: bridge
